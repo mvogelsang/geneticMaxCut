@@ -23,8 +23,8 @@ class Population:
 	def __init__(self, graph, populationSize, crossoverFunc, mutationFunc):
 		self.graph = graph
 		self.size = populationSize
-		self.crossoverFunc = crossoverFunc
-		self.mutationFunc = mutationFunc
+		self.crossover = crossoverFunc
+		self.mutation = mutationFunc
 		self.cuts = []
 
 	def getInitPopulation(self):
@@ -53,19 +53,20 @@ class Population:
 			fitness_sum = fitness_sum + value
 
 		# find random number between 0 and fitness sum
-		prob = random.randint(0, fitness_sum)
+		prob = random.randint(0, int(fitness_sum))
 
 		# search until current value > fitness sum
 		current_value = 0
 		for i in range(self.size):
 			current_value = current_value + fitness_list[i]
-			if(current_value > prob):
+			if(current_value >= prob):
 				return self.cuts[i]
 
 	# generate new population
 	def breedNewGeneration(self):
 		# keep best 10% from last generation (assume already sorted)
-		num_to_keep = int(math.floor(self.size * .1))
+		# num_to_keep = int(math.floor(self.size * .1))
+		num_to_keep = 2
 		new_pop = self.cuts[:num_to_keep]
 
 		# breed population size times
@@ -80,13 +81,16 @@ class Population:
 
 			# force mutate if children in pop already
 			if(child1 in new_pop):
-				self.mutate(child1)
+				self.mutation(child1)
 			if(child2 in new_pop):
-				self.mutate(child2)
+				self.mutation(child2)
 
 			# add new children to potential population
 			new_pop.append(child1)
 			new_pop.append(child2)
+
+		# put the new pop into the true population
+		self.cuts = new_pop
 
 		# sort potential population
 		self.sortByFitness()
@@ -108,8 +112,8 @@ class Population:
 				for neighbor in neighbors:
 					j = int(neighbor)
 					if(cut[j] == 1):
-						fitness += graph.edge[city][neighbor]['weight']
-						# fitness += 1
+						# fitness += graph.edge[city][neighbor]['weight']
+						fitness += 1
 		return fitness
 
 	##def crossover(cut1, cut2):
@@ -196,6 +200,34 @@ def illustrateCut(graph, cutTitle, cut):
 	nx.draw_networkx_edges(graph, pos, edgelist=cutEdges, edge_color='black', width=1.4)
 	plt.pause(.1)
 
+def crossover1(parent1, parent2):
+	middle = int(math.floor((len(parent1)-1)/2))
+	end = len(parent1)-1
+
+	# get the boundary for a random chunk from path 2
+	randBegin = random.randint(0,middle)
+	randEnd = random.randint(middle+1, end)
+	
+	#chop out pieces of parent1 and parent2 and make the child
+	child = parent1[:randBegin] + parent2[randBegin:randEnd] + parent1[randEnd:]
+
+	if len(child) != len(parent1):
+		print 'ERR!'
+
+	return child
+
+def mutation1(citizen):
+	numFlips = random.randint(0, len(citizen)-1)
+
+	i = 0
+	while i < numFlips:
+		randLocation = random.randint(0, len(citizen)-1)
+		citizen[randLocation] = flipInt(citizen[randLocation])
+		i += 1
+
+def flipInt(num):
+	return int(not(num and num))
+
 def main():
 	inputFile = sys.argv[1]
 	cityGraph = initializeGraph(inputFile)
@@ -205,11 +237,21 @@ def main():
 
 	illustrateFullGraph(cityGraph)
 
-	pop = Population(cityGraph, 10, blank, blank)
+	pop = Population(cityGraph, 50, crossover1, mutation1)
+
 	pop.getInitPopulation()
 	pop.sortByFitness()
-
 	illustrateCut(cityGraph, 'Best Initial Cut', pop.cuts[0])
+	print pop.getFitness(pop.cuts[0])
+
+	for i in range(50):
+		pop.breedNewGeneration()
+		print pop.getFitness(pop.cuts[0])
+
+	pop.sortByFitness()
+	illustrateCut(cityGraph, 'Best Final Gen Cut', pop.cuts[0])
+	print pop.getFitness(pop.cuts[0])
+
 
 	# keep the graphs up at the end
 	plt.ioff()
