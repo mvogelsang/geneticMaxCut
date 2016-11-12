@@ -105,14 +105,28 @@ def initializeGraph(filepath):
 
 	cityfile.close()
 	return cityGraph
+
 def blank():
 	return
+
+def animateFullGraph(graph):
+	plt.figure()
+	plt.title('Full Graph')
+
 def main():
 	inputFile = sys.argv[1]
 	cityGraph = initializeGraph(inputFile)
 
 	pop = Population(cityGraph, 10, blank, blank)
 	pop.getInitPopulation()
+
+	# turn on pyplot's interactive mode to allow live updating of the graph
+    plt.ion()
+
+	# force nodes to render according to their x,y position and not randomly
+    pos = {}
+    for node in cityGraph.nodes():
+        pos[node] = [cityGraph.node[node]["x"], cityGraph.node[node]["y"]]
 
 if __name__ == "__main__":
     main()
