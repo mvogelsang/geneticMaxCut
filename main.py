@@ -75,7 +75,7 @@ def initializeGraph(filepath):
 
 		if len(splitLine) == 2:
 			edgeWeight = math.hypot(graph.node[splitLine[0]]['x'] - graph.node[splitLine[1]]['x'], graph.node[splitLine[0]]['y'] - graph.node[splitLine[1]]['y'])
-			graph.add_edge(splitLine[0], splitLine[1], weight=edgeWeight)
-		
+			cityGraph.add_edge(splitLine[0], splitLine[1], weight=edgeWeight)
 
     cityfile.close()
+	return cityGraph
