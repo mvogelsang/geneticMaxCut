@@ -36,19 +36,19 @@ class Population:
 	# (source: http://stackoverflow.com/questions/10324015/fitness-proportionate-selection-roulette-wheel-selection-in-python)
 	def parentSelect(self):
 		fitness_list = []
-		
+
 		# create list of fitnesses
 		for cut in self.cuts:
 			fitness_list.append(self.getFitness(cut)
-		
+
 		# sum up fitnesses
 		fitness_sum = 0
 		for value in fitness_list:
 			fitness_sum = fitness_sum + value
-		
+
 		# find random number between 0 and fitness sum
 		prob = random.randint(0, fitness_sum)
-		
+
 		# search until current value > fitness sum
 		current_value = 0
 		for i in range(self.size):
@@ -61,13 +61,6 @@ class Population:
 		pass
 	## put code shit
 
-	# sort population
-	def sortPop(self):
-		pass
-	## put code shit
-
-	# find fittest member of population
-	def getFittest(self):
 	## put code shit
 	def sortByFitness(self):
 		self.cuts.sort(None, self.getFitness, True)
@@ -111,10 +104,20 @@ def initializeGraph(filepath):
 
 	cityfile.close()
 	return cityGraph
-
+def blank():
+	return
 def main():
 	inputFile = sys.argv[1]
 	cityGraph = initializeGraph(inputFile)
+
+	pop = Population(cityGraph, 10, blank, blank)
+	pop.getInitPopulation()
+	print pop.getFitness(pop.cuts[0])
+	print pop.getFitness(pop.cuts[-1])
+
+	pop.sortByFitness()
+	print pop.getFitness(pop.cuts[0])
+	print pop.getFitness(pop.cuts[-1])
 
 if __name__ == "__main__":
     main()
