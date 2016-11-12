@@ -14,15 +14,24 @@ import matplotlib.pyplot as plt
 from Tkinter import *
 
 class Population:
-	def __init__(self, graph, population_size, crossover_func):
+	def __init__(self, graph, populationSize, crossoverFunc, mutationFunc):
 		self.graph = graph
-		self.population_size = population_size
-		self.crossover_func = crossover_func
+		self.size = populationSize
+		self.crossoverFunc = crossoverFunc
+		self.mutationFunc = mutationFunc
+		self.cuts = []
 
-	# generate random initial population
 	def get_init_population(self):
-		pass
-	# put code shit
+		# generate population_size members
+		for i in range(self.size):
+			cut = []
+			
+			# generate 0 or 1 for every node in graph
+			for i in range(len(self.graph.nodes())):
+				cut.append(random.randint(0, 1))
+			
+			# add new cut to population's cut
+			self.cuts.append(cut)
 
 	# select parent for breeding
 	def parent_select(self):
@@ -45,20 +54,6 @@ class Population:
 	## put code shit
 
 	##def crossover(cut1, cut2):
-	## FILL IN LATER
-
-class Cut:
-	def __init__(self, cut, mutate_func):
-		self.cut = cut
-		self.fitness = self.get_fitness()
-		self.mutate_func = mutate_func
-
-	# get fitness for stored cut
-	def get_fitness(self):
-		pass
-	## put code shit
-
-	##def mutate(self):
 	## FILL IN LATER
 
 # function that returns a networkx graph fully initialized based on an input file
