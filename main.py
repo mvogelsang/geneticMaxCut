@@ -39,7 +39,7 @@ class Population:
 
 		# create list of fitnesses
 		for cut in self.cuts:
-			fitness_list.append(self.getFitness(cut)
+			fitness_list.append(self.getFitness(cut))
 
 		# sum up fitnesses
 		fitness_sum = 0
@@ -75,7 +75,8 @@ class Population:
 				for neighbor in neighbors:
 					j = int(neighbor)
 					if(cut[j] == 1):
-						fitness += graph.edge[city][neighbor]['weight']
+						#fitness += graph.edge[city][neighbor]['weight']
+						fitness += 1
 		return fitness
 
 	##def crossover(cut1, cut2):
@@ -112,12 +113,6 @@ def main():
 
 	pop = Population(cityGraph, 10, blank, blank)
 	pop.getInitPopulation()
-	print pop.getFitness(pop.cuts[0])
-	print pop.getFitness(pop.cuts[-1])
-
-	pop.sortByFitness()
-	print pop.getFitness(pop.cuts[0])
-	print pop.getFitness(pop.cuts[-1])
 
 if __name__ == "__main__":
     main()
