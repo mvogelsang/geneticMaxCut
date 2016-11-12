@@ -56,16 +56,26 @@ class Cut:
 	## FILL IN LATER
 
 # function that returns a networkx graph fully initialized based on an input file
-def initiializeGraph(filepath):
-	cityfile = open(inputfile, "r") # open the file for reading
+def initializeGraph(filepath):
+	# open file
+	cityfile = open(filepath, "r") # open the file for reading
 
-    # not the most robust parsing method, but we're just going to skip the first
-    # seven lines of the input file and then start initializing our dict of cities
-    skipper = 0
+	# the file parsing comes in two stages
+	# 1. read in the nodes and their coordinates
+	# 2. read in the edges in the graph
     cityGraph = nx.Graph()
     for line in cityfile:
-        # split the line into an array of three tokens by its spaces
+        # split the line into an array of tokens by its spaces
         splitLine = line.split(" ")
-        # initialize a cities object containing each city and its coordinates
-        cityGraph.add_node(splitLine[0], x=float(splitLine[1]), y=float(splitLine[2]))
+
+		if len(splitLine) == 3:
+			# initialize a cities object containing each city and its coordinates
+			cityGraph.add_node(splitLine[0], x=float(splitLine[1]), y=float(splitLine[2]))
+			continue
+
+		if len(splitLine) == 2:
+			edgeWeight = math.hypot(graph.node[splitLine[0]]['x'] - graph.node[splitLine[1]]['x'], graph.node[splitLine[0]]['y'] - graph.node[splitLine[1]]['y'])
+			graph.add_edge(splitLine[0], splitLine[1], weight=edgeWeight)
+		
+
     cityfile.close()
