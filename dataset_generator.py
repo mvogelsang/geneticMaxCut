@@ -43,30 +43,41 @@ def random_combination(iterable, r):
 	indices = sorted(random.sample(xrange(n), r))
 	return tuple(pool[i] for i in indices)
 
-# generate (n)(n-1)/4 random edges from dataset
+def check_edges(edges, new_edge):
+	for edge in edges:	
+		if(edge.node1.label == new_edge.node1.label and edge.node2.label == new_edge.node2.label):
+					return False
+		elif(edge.node1.label == new_edge.node2.label and edge.node2.label == new_edge.node1.label):
+					return False
+	
+	return True
 def generate_edges(node_list):
-	num_nodes = len(node_list)
 	edges = []
 	
-	# get half of possible edges
-	edges_to_get = math.floor(((num_nodes) * (num_nodes - 1)) / 4)
-	edges_to_get = int(edges_to_get)
+	# generate edge for each node
+	for node in node_list:
+		add = False
+		new_edge = None
+		
+		while(add is False):
+			edge_node = random.choice(node_list)
+		
+			if(edge_node.label != node.label):
+				new_edge = Edge(node, edge_node)
+				add = check_edges(edges, new_edge)
+		
+		edges.append(new_edge)
 	
-	while(len(edges) != edges_to_get):
+	num_edges = int(math.ceil(len(node_list) ** 1.25))
+	
+	while len(edges) != num_edges:
 		new_edge = list(random_combination(node_list, 2))
+		new_edge = Edge(new_edge[0], new_edge[1])
 		
-		new_edge1 = Edge(new_edge[0], new_edge[1])
-		new_edge2 = Edge(new_edge[1], new_edge[0]) 
-		
-		add = True
-		for edge in edges:
-			if(edge.node1.label == new_edge1.node1.label and edge.node2.label == new_edge1.node2.label):
-				add = False
-			elif(edge.node1.label == new_edge2.node1.label and edge.node2.label == new_edge2.node2.label):
-				add = False
+		add = check_edges(edges, new_edge)
 		
 		if(add is True):
-			edges.append(new_edge1) 
+			edges.append(new_edge)
 	
 	return edges
 
