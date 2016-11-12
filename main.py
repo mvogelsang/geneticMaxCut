@@ -21,38 +21,40 @@ class Population:
 		self.mutationFunc = mutationFunc
 		self.cuts = []
 
-	def get_init_population(self):
+	def getInitPopulation(self):
 		# generate population_size members
 		for i in range(self.size):
 			cut = []
-			
+
 			# generate 0 or 1 for every node in graph
 			for i in range(len(self.graph.nodes())):
 				cut.append(random.randint(0, 1))
-			
+
 			# add new cut to population's cut
 			self.cuts.append(cut)
 
 	# select parent for breeding
-	def parent_select(self):
+	def parentSelect(self):
 		pass
 	## put code shit
 
 	# generate new population
-	def breed_new_generation(self):
+	def breedNewGeneration(self):
 		pass
 	## put code shit
 
 	# sort population
-	def sort_pop(self):
+	def sortPop(self):
 		pass
 	## put code shit
 
 	# find fittest member of population
-	def get_fittest(self):
+	def getFittest(self):
 		pass
 	## put code shit
 
+	def getFitness():
+		pass
 	##def crossover(cut1, cut2):
 	## FILL IN LATER
 
