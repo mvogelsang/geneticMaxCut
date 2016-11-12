@@ -13,6 +13,12 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from Tkinter import *
 
+# the following lines supress an unnecessary and unavoidable warning in the
+# command line. The warning comes inherently from calling certain animation functions
+import warnings
+import matplotlib.cbook
+warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
+
 class Population:
 	def __init__(self, graph, populationSize, crossoverFunc, mutationFunc):
 		self.graph = graph
@@ -61,30 +67,30 @@ class Population:
 		# keep best 10% from last generation (assume already sorted)
 		num_to_keep = int(math.floor(self.size * .1))
 		new_pop = self.cuts[:num_to_keep]
-		
+
 		# breed population size times
 		for i in range(self.size):
 			# get parents
 			parent1 = self.parentSelect()
 			parent2 = self.parentSelect()
-			
+
 			# get 2 children based on parents
 			child1 = self.crossover(parent1, parent2)
 			child2 = self.crossover(parent1, parent2)
-			
+
 			# force mutate if children in pop already
 			if(child1 in new_pop):
 				self.mutate(child1)
 			if(child2 in new_pop):
-				self.mutate(child2) 
-			
+				self.mutate(child2)
+
 			# add new children to potential population
 			new_pop.append(child1)
 			new_pop.append(child2)
-		
+
 		# sort potential population
 		self.sortByFitness()
-		
+
 		# keep only the best population size cuts
 		self.cuts = self.cuts[:self.size]
 
@@ -102,8 +108,8 @@ class Population:
 				for neighbor in neighbors:
 					j = int(neighbor)
 					if(cut[j] == 1):
-						#fitness += graph.edge[city][neighbor]['weight']
-						fitness += 1
+						fitness += graph.edge[city][neighbor]['weight']
+						# fitness += 1
 		return fitness
 
 	##def crossover(cut1, cut2):
@@ -136,24 +142,77 @@ def initializeGraph(filepath):
 def blank():
 	return
 
-def animateFullGraph(graph):
+def illustrateFullGraph(graph):
+	# force nodes to render according to their x,y position and not randomly
+	pos = {}
+	for node in graph.nodes():
+	    pos[node] = [graph.node[node]["x"], graph.node[node]["y"]]
+
 	plt.figure()
 	plt.title('Full Graph')
+	nx.draw_networkx_labels(graph, pos)
+	nx.draw_networkx_nodes(graph, pos, node_color=(.7,.7,.7))
+	nx.draw_networkx_edges(graph, pos, edgelist=graph.edges(), edge_color='grey')
+	plt.pause(.1)
+
+def illustrateCut(graph, cutTitle, cut):
+	# draw in a new window
+	plt.figure()
+
+	# set the title
+	plt.title(cutTitle)
+
+	# force nodes to render according to their x,y position and not randomly
+	pos = {}
+	for node in graph.nodes():
+	    pos[node] = [graph.node[node]["x"], graph.node[node]["y"]]
+
+	# get the two separate sets of nodes
+	s1 = []
+	s2 = []
+	for i in range(0, len(cut)):
+		if( cut[i] == 0 ):
+			s1.append(str(i))
+		else:
+			s2.append(str(i))
+	nx.draw_networkx_labels(graph, pos)
+	nx.draw_networkx_nodes(graph, pos, nodelist=s1, node_color='red')
+	nx.draw_networkx_nodes(graph, pos, nodelist=s2, node_color='blue')
+
+	# lightly animate all of the edges in the graph
+	nx.draw_networkx_edges(graph, pos, edgelist=graph.edges(), edge_color='grey', width=.2)
+
+	# get all of the edges in the cut
+	cutEdges=[]
+	for i in range(0, len(cut)):
+		if(cut[i] == 0):
+			city = str(i)
+			neighbors = graph.neighbors(city)
+			for neighbor in neighbors:
+				j = int(neighbor)
+				if(cut[j] == 1):
+					cutEdges.append( (str(i),str(j)) )
+
+	nx.draw_networkx_edges(graph, pos, edgelist=cutEdges, edge_color='black', width=1.4)
+	plt.pause(.1)
 
 def main():
 	inputFile = sys.argv[1]
 	cityGraph = initializeGraph(inputFile)
 
+	# turn on pyplot's interactive mode to allow live updating of the graph
+	plt.ion()
+
+	illustrateFullGraph(cityGraph)
+
 	pop = Population(cityGraph, 10, blank, blank)
 	pop.getInitPopulation()
+	pop.sortByFitness()
 
-	# turn on pyplot's interactive mode to allow live updating of the graph
-    plt.ion()
+	illustrateCut(cityGraph, 'Best Initial Cut', pop.cuts[0])
 
-	# force nodes to render according to their x,y position and not randomly
-    pos = {}
-    for node in cityGraph.nodes():
-        pos[node] = [cityGraph.node[node]["x"], cityGraph.node[node]["y"]]
-
+	# keep the graphs up at the end
+	plt.ioff()
+	plt.show()
 if __name__ == "__main__":
     main()
