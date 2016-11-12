@@ -52,8 +52,8 @@ class Population:
 	def getFittest(self):
 	## put code shit
 	def sortByFitness(self):
-		cuts = self.cuts
-		
+		self.cuts.sort(None, self.getFitness, True)
+
 	def getFitness(self, cut):
 		graph = self.graph
 		fitness = 0
