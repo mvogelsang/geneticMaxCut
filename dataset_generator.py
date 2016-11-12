@@ -92,7 +92,7 @@ def main():
 	in_file = sys.argv[1]
 	out_file = sys.argv[2]  
 	
-	node_list = rd_tsp_file(in_file)
+	node_list = rd_file(in_file)
 	edge_list = generate_edges(node_list)
 	
 	write_file(node_list, edge_list, out_file)
