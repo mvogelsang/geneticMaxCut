@@ -207,7 +207,7 @@ def crossover1(parent1, parent2):
 	# get the boundary for a random chunk from path 2
 	randBegin = random.randint(0,middle)
 	randEnd = random.randint(middle+1, end)
-	
+
 	#chop out pieces of parent1 and parent2 and make the child
 	child = parent1[:randBegin] + parent2[randBegin:randEnd] + parent1[randEnd:]
 
@@ -222,11 +222,8 @@ def mutation1(citizen):
 	i = 0
 	while i < numFlips:
 		randLocation = random.randint(0, len(citizen)-1)
-		citizen[randLocation] = flipInt(citizen[randLocation])
+		citizen[randLocation] = citizen[randLocation] ^ 1
 		i += 1
-
-def flipInt(num):
-	return int(not(num and num))
 
 def main():
 	inputFile = sys.argv[1]
