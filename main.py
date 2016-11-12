@@ -53,10 +53,20 @@ class Population:
 		pass
 	## put code shit
 
-	def getFitness():
-		pass
+	def getFitness(self, cut):
+		graph = self.graph
+		fitness = 0
+		for i in range(0, len(cut)):
+			if(cut[i] == 0):
+				city = str(i)
+				neighbors = graph.neighbors(city)
+				for neighbor in neighbors:
+					j = int(neighbor)
+					if(cut[j] == 1):
+						fitness += graph.edge[city][neighbor]['weight']
+		return fitness
+
 	##def crossover(cut1, cut2):
-	## FILL IN LATER
 
 # function that returns a networkx graph fully initialized based on an input file
 def initializeGraph(filepath):
