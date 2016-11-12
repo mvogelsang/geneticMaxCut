@@ -24,7 +24,7 @@ def rd_file(tsp_file):
 		
 		for line in f: 
 			split = line.split(' ') 
-			node_label = split[0] 
+			node_label = str(int(split[0]) - 1)
 			node_x = float(split[1])
 			node_y = float(split[2])
 			
