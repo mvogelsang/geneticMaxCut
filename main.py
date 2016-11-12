@@ -33,10 +33,28 @@ class Population:
 			# add new cut to population's cut
 			self.cuts.append(cut)
 
-	# select parent for breeding
+	# (source: http://stackoverflow.com/questions/10324015/fitness-proportionate-selection-roulette-wheel-selection-in-python)
 	def parentSelect(self):
-		pass
-	## put code shit
+		fitness_list = []
+		
+		# create list of fitnesses
+		for cut in self.cuts:
+			fitness_list.append(self.getFitness(cut)
+		
+		# sum up fitnesses
+		fitness_sum = 0
+		for value in fitness_list:
+			fitness_sum = fitness_sum + value
+		
+		# find random number between 0 and fitness sum
+		prob = random.randint(0, fitness_sum)
+		
+		# search until current value > fitness sum
+		current_value = 0
+		for i in range(self.size):
+			current_value = current_value + fitness_list[i]
+			if(current_value > prob):
+				return self.cuts[i]
 
 	# generate new population
 	def breedNewGeneration(self):
