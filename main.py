@@ -58,8 +58,35 @@ class Population:
 
 	# generate new population
 	def breedNewGeneration(self):
-		pass
-	## put code shit
+		# keep best 10% from last generation (assume already sorted)
+		num_to_keep = int(math.floor(self.size * .1))
+		new_pop = self.cuts[:num_to_keep]
+		
+		# breed population size times
+		for i in range(self.size):
+			# get parents
+			parent1 = self.parentSelect()
+			parent2 = self.parentSelect()
+			
+			# get 2 children based on parents
+			child1 = self.crossover(parent1, parent2)
+			child2 = self.crossover(parent1, parent2)
+			
+			# force mutate if children in pop already
+			if(child1 in new_pop):
+				self.mutate(child1)
+			if(child2 in new_pop):
+				self.mutate(child2) 
+			
+			# add new children to potential population
+			new_pop.append(child1)
+			new_pop.append(child2)
+		
+		# sort potential population
+		self.sortByFitness()
+		
+		# keep only the best population size cuts
+		self.cuts = self.cuts[:self.size]
 
 	## put code shit
 	def sortByFitness(self):
