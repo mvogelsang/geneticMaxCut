@@ -65,8 +65,8 @@ class Population:
 	# generate new population
 	def breedNewGeneration(self):
 		# keep best 10% from last generation (assume already sorted)
-		# num_to_keep = int(math.floor(self.size * .1))
-		num_to_keep = 2
+		num_to_keep = int(math.floor(self.size * .1))
+		# num_to_keep = 2
 		new_pop = self.cuts[:num_to_keep]
 
 		# breed population size times
@@ -88,6 +88,12 @@ class Population:
 			# add new children to potential population
 			new_pop.append(child1)
 			new_pop.append(child2)
+
+		# breed best no matter what
+		new_pop.append(self.crossover(self.cuts[0], self.parentSelect()))
+
+		# breed best and worst matter what
+		new_pop.append(self.crossover(self.cuts[0], self.cuts[-1]))
 
 		# put the new pop into the true population
 		self.cuts = new_pop
@@ -112,8 +118,8 @@ class Population:
 				for neighbor in neighbors:
 					j = int(neighbor)
 					if(cut[j] == 1):
-						# fitness += graph.edge[city][neighbor]['weight']
-						fitness += 1
+						fitness += graph.edge[city][neighbor]['weight']
+						# fitness += 1
 		return fitness
 
 	##def crossover(cut1, cut2):
@@ -225,6 +231,61 @@ def mutation1(citizen):
 		citizen[randLocation] = citizen[randLocation] ^ 1
 		i += 1
 
+def runGeneticAlgorithm(graph, pop, numGenerations):
+	i = 0
+
+	pop.getInitPopulation()
+	pop.sortByFitness()
+	illustrateCut(graph, 'Best Initial Cut', pop.cuts[0])
+	print pop.getFitness(pop.cuts[0])
+
+	while i < numGenerations:
+		pop.breedNewGeneration()
+		print pop.getFitness(pop.cuts[0])
+		i += 1
+
+	illustrateCut(graph, 'Best Final Gen Cut', pop.cuts[0])
+	print pop.getFitness(pop.cuts[0])
+
+def bruteForceSolution(graph):
+	pop = Population(graph, 1, crossover1, mutation1)
+
+	# make initial cut
+	cut = []
+	numCities = len(graph.nodes())
+	i = 0
+	while i < numCities - 1:
+		cut.append(0)
+
+	i=0
+	maxPerformance = -1
+	maxCut = []
+	numIterations = (2**numCities)
+	while i < numIterations:
+		incrementCut(cut, 0)
+		performance = pop.getFitness(cut)
+		if( performance > maxPerformance ):
+			maxPerformance = performance
+			maxCut = cut[:]
+		i += 1
+
+	print 'brute force'
+	print 'max ', maxPerformance
+	print 'soln ', maxCut
+	illustrateCut(graph, 'Brute Force Solution', maxCut)
+
+def incrementCut(cut, position):
+	if(position == len(cut-1)):
+		return
+	else:
+		cut[position] += 1
+		if cut[position] == 2:
+			cut[position] = 0
+			incrementCut(cut, position+1)
+
+	print cut
+	return
+
 def main():
 	inputFile = sys.argv[1]
 	cityGraph = initializeGraph(inputFile)
@@ -236,19 +297,9 @@ def main():
 
 	pop = Population(cityGraph, 50, crossover1, mutation1)
 
-	pop.getInitPopulation()
-	pop.sortByFitness()
-	illustrateCut(cityGraph, 'Best Initial Cut', pop.cuts[0])
-	print pop.getFitness(pop.cuts[0])
+	# runGeneticAlgorithm(cityGraph, pop, 20)
 
-	for i in range(50):
-		pop.breedNewGeneration()
-		print pop.getFitness(pop.cuts[0])
-
-	pop.sortByFitness()
-	illustrateCut(cityGraph, 'Best Final Gen Cut', pop.cuts[0])
-	print pop.getFitness(pop.cuts[0])
-
+	bruteForceSolution(cityGraph)
 
 	# keep the graphs up at the end
 	plt.ioff()
