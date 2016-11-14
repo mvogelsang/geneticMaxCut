@@ -98,9 +98,12 @@ class Population:
 		new_pop.append(self.crossover(self.cuts[0], self.cuts[-1]))
 		
 		# run mutation on potential population		
-		for cut in new_pop:
+		i = 1
+		while i < len(new_pop):
+			cut = new_pop[i]
 			if(random.random() < self.mutationRate):
-				self.mutation(cut) 
+				self.mutation(cut)
+			i += 1 
 				
 		# put the new pop into the true population
 		self.cuts = new_pop
@@ -288,17 +291,20 @@ def runGeneticAlgorithm(outFile, graph, pop, numGenerations):
 	#print pop.getFitness(pop.getFitness(pop.cuts[0]))
 	
 	fitnessList.append(pop.getFitness(pop.cuts[0]))
+	
 	while i < numGenerations:
+		start = time.time()
 		pop.breedNewGeneration()
-		print pop.getFitness(pop.cuts[0])
+		#print pop.getFitness(pop.cuts[0])
 		i += 1
 		
 		fitnessList.append(pop.getFitness(pop.cuts[0]))
-		
+		finish = time.time() - start
+		print finish 
 	illustrateCut(outFile, graph, 'Best Final Gen Cut', pop.cuts[0])
 	#print pop.getFitness(pop.cuts[0])
 	
-	return fitnessList[0], fitnessList
+	return fitnessList[-1], fitnessList
 
 def bruteForceSolution(outFile, graph):
 	pop = Population(graph, 1, crossover1, mutation1, .5)
@@ -326,7 +332,7 @@ def bruteForceSolution(outFile, graph):
 	print 'brute force'
 	print 'max ', maxPerformance
 	print 'soln ', maxCut
-	illustrateCut(outFile + 'BF', graph, 'Brute Force Solution', maxCut)
+	illustrateCut(outFile, graph, 'Brute Force Solution', maxCut)
 	
 	return maxPerformance
 
@@ -350,7 +356,7 @@ def fitnessOverTime(outFile, fitnessList):
 	plt.title('Gen v. Fitness')
 	plt.plot(genNum, fitnessList, 'bo',genNum, fitnessList, 'k')
 
-	plt.axis([0,genNum.pop() + 55, 0, fitnessList[0] + 500])
+	plt.axis([0,genNum.pop() + 55, 0, fitnessList[-1] + 500])
 	plt.show()
 	
 	f.savefig(outFile + '/' + outFile + str(trialNumber) + 'FOT.pdf')
@@ -377,7 +383,7 @@ def main():
 	global trialNumber 
 	if(runType == '0'):
 		start = time.time()
-		maxPerformance = bruteForceSolution(cityGraph)
+		maxPerformance = bruteForceSolution(outFile, cityGraph)
 		finish = time.time() - start
 		writeStats(outFile, maxPerformance, finish)
 	
@@ -396,22 +402,14 @@ def main():
 		else:
 			mutation = mutation2
 		
-		for i in range(5):
+		for i in range(1):
 			start = time.time()
-			pop = Population(cityGraph, 100, crossover, mutation, .1)
+			pop = Population(cityGraph, 1, crossover, mutation, .1)
 			maxPerformance, fitnessList = runGeneticAlgorithm(outFile, cityGraph, pop, 1) 
 			finish = time.time() - start
 			writeStats(outFile, maxPerformance, finish)
 			fitnessOverTime(outFile, fitnessList)
 			trialNumber += 1
-
-	##illustrateFullGraph(cityGraph)
-
-	#pop = Population(cityGraph, 50, crossover1, mutation1, .5)
-
-	# runGeneticAlgorithm(cityGraph, pop, 20)
-
-	#bruteForceSolution(cityGraph)
 
 	# keep the graphs up at the end
 	# plt.ioff()
