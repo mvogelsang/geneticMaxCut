@@ -64,10 +64,8 @@ class Population:
 
 	# generate new population
 	def breedNewGeneration(self):
-		# keep best 10% from last generation (assume already sorted)
-		num_to_keep = int(math.floor(self.size * .1))
-		# num_to_keep = 2
-		new_pop = self.cuts[:num_to_keep]
+		new_pop = []
+		new_pop.append(self.cuts[0]) 
 
 		# breed population size times
 		for i in range(self.size):
@@ -111,13 +109,17 @@ class Population:
 	def getFitness(self, cut):
 		graph = self.graph
 		fitness = 0
+		
+		# iterate through each node in the graph
 		for i in range(0, len(cut)):
+			# if in cut 0, find all connected nodes
 			if(cut[i] == 0):
 				city = str(i)
 				neighbors = graph.neighbors(city)
+				# find all neigbors in cut 1
 				for neighbor in neighbors:
 					j = int(neighbor)
-					print j
+					# add weight of edge if it crosses the cut
 					if(cut[j] == 1):
 						fitness += graph.edge[city][neighbor]['weight']
 						# fitness += 1
@@ -226,15 +228,50 @@ def crossover1(parent1, parent2):
 
 	return child
 
+def crossover2(parent1, parent2):
+	child = [] 
+	
+	i = 0
+	# continue until len(child) == len(parent)
+	while i < len(parent1):
+		# random bit if parent bits are different
+		if(parent1[i] != parent2[i]):
+			new_bit = 0
+			
+			# newBit is 1 50% of the time
+			if(random.rand() > .5):
+				newBit = 1
+			
+			child.append(newBit)
+		# same bit as parents if parent bits are same
+		else:
+			child.append(parent1[i])
+		
+		i += 1
+		
+	if len(child) != len(parent1):
+		print 'ERR!'
+	
+	return child 
+				
 def mutation1(citizen):
+	# calculate number of flips to perform
 	numFlips = random.randint(0, len(citizen)-1)
 
 	i = 0
+	# perform specified flips by XORing value at randLocation
 	while i < numFlips:
 		randLocation = random.randint(0, len(citizen)-1)
 		citizen[randLocation] = citizen[randLocation] ^ 1
 		i += 1
 
+def mutation2(citizen):
+	# get random location
+	randLocation = random.randint(0, len(citizen) - 1) 
+	
+	# flip value at randLocation by XOR
+	citizen[randLocation] = citizen[randLocation ^ 1
+	
 def runGeneticAlgorithm(graph, pop, numGenerations):
 	i = 0
 
@@ -294,6 +331,7 @@ def incrementCut(cut, position):
 	return
 
 def main():
+	random.seed() 
 	inputFile = sys.argv[1]
 	cityGraph = initializeGraph(inputFile)
 
