@@ -1,6 +1,6 @@
 #!/bin/bash
  
-for i in 9 10 11 12 22 44 60 77 97 120
+for i in 9 10 11 12 22 44 60 77 97 120 
 do
 	OUTFILE="00Random"$i
 	mkdir $OUTFILE
