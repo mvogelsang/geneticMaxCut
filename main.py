@@ -20,7 +20,7 @@ import matplotlib.cbook
 warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 
 class Population:
-	def __init__(self, graph, populationSize, crossoverFunc, mutationFunc):
+	def __init__(self, graph, populationSize, crossoverFunc, mutationFunc, mutationRate):
 		self.graph = graph
 		self.size = populationSize
 		self.crossover = crossoverFunc
@@ -92,10 +92,15 @@ class Population:
 
 		# breed best and worst matter what
 		new_pop.append(self.crossover(self.cuts[0], self.cuts[-1]))
-
+		
+		# run mutation on potential population		
+		for cut in new_pop:
+			if(random.rand() < self.mutationRate):
+				self.mutation(cut) 
+				
 		# put the new pop into the true population
 		self.cuts = new_pop
-
+		
 		# sort potential population
 		self.sortByFitness()
 
@@ -125,8 +130,6 @@ class Population:
 						# fitness += 1
 		return fitness
 
-	##def crossover(cut1, cut2):
-
 # function that returns a networkx graph fully initialized based on an input file
 def initializeGraph(filepath):
 	# open file
@@ -151,9 +154,6 @@ def initializeGraph(filepath):
 
 	cityfile.close()
 	return cityGraph
-
-def blank():
-	return
 
 def illustrateFullGraph(graph):
 	# force nodes to render according to their x,y position and not randomly
@@ -270,7 +270,7 @@ def mutation2(citizen):
 	randLocation = random.randint(0, len(citizen) - 1) 
 	
 	# flip value at randLocation by XOR
-	citizen[randLocation] = citizen[randLocation ^ 1
+	citizen[randLocation] = citizen[randLocation] ^ 1
 	
 def runGeneticAlgorithm(graph, pop, numGenerations):
 	i = 0
@@ -289,7 +289,7 @@ def runGeneticAlgorithm(graph, pop, numGenerations):
 	print pop.getFitness(pop.cuts[0])
 
 def bruteForceSolution(graph):
-	pop = Population(graph, 1, crossover1, mutation1)
+	pop = Population(graph, 1, crossover1, mutation1, .5)
 
 	# make initial cut
 	cut = []
@@ -303,10 +303,8 @@ def bruteForceSolution(graph):
 	maxPerformance = -1
 	maxCut = []
 	numIterations = (2**numCities)
-	print 'here'
 	while i < numIterations:
 		incrementCut(cut, 0)
-		print 'here', i
 		performance = pop.getFitness(cut)
 		if( performance > maxPerformance ):
 			maxPerformance = performance
@@ -319,15 +317,13 @@ def bruteForceSolution(graph):
 	illustrateCut(graph, 'Brute Force Solution', maxCut)
 
 def incrementCut(cut, position):
-	if(position == len(cut)-1):
+	if(position == len(cut)):
 		return
 	else:
 		cut[position] += 1
 		if cut[position] == 2:
 			cut[position] = 0
 			incrementCut(cut, position+1)
-
-	print cut
 	return
 
 def main():
@@ -340,7 +336,7 @@ def main():
 
 	illustrateFullGraph(cityGraph)
 
-	pop = Population(cityGraph, 50, crossover1, mutation1)
+	pop = Population(cityGraph, 50, crossover1, mutation1, .5)
 
 	# runGeneticAlgorithm(cityGraph, pop, 20)
 
