@@ -117,6 +117,7 @@ class Population:
 				neighbors = graph.neighbors(city)
 				for neighbor in neighbors:
 					j = int(neighbor)
+					print j
 					if(cut[j] == 1):
 						fitness += graph.edge[city][neighbor]['weight']
 						# fitness += 1
@@ -215,8 +216,11 @@ def crossover1(parent1, parent2):
 	randEnd = random.randint(middle+1, end)
 
 	#chop out pieces of parent1 and parent2 and make the child
-	child = parent1[:randBegin] + parent2[randBegin:randEnd] + parent1[randEnd:]
-
+	#child = parent1[:randBegin] + parent2[randBegin:randEnd] + parent1[randEnd:]
+	
+	child = parent1[:] 
+	child[randBegin:randEnd] = parent2[randBegin:randEnd]
+	
 	if len(child) != len(parent1):
 		print 'ERR!'
 
@@ -254,15 +258,18 @@ def bruteForceSolution(graph):
 	cut = []
 	numCities = len(graph.nodes())
 	i = 0
-	while i < numCities - 1:
+	while i < numCities:
 		cut.append(0)
-
+		i += 1
+		
 	i=0
 	maxPerformance = -1
 	maxCut = []
 	numIterations = (2**numCities)
+	print 'here'
 	while i < numIterations:
 		incrementCut(cut, 0)
+		print 'here', i
 		performance = pop.getFitness(cut)
 		if( performance > maxPerformance ):
 			maxPerformance = performance
@@ -275,7 +282,7 @@ def bruteForceSolution(graph):
 	illustrateCut(graph, 'Brute Force Solution', maxCut)
 
 def incrementCut(cut, position):
-	if(position == len(cut-1)):
+	if(position == len(cut)-1):
 		return
 	else:
 		cut[position] += 1
