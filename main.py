@@ -19,6 +19,9 @@ import warnings
 import matplotlib.cbook
 warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 
+
+trialNumber = 0
+
 class Population:
 	def __init__(self, graph, populationSize, crossoverFunc, mutationFunc, mutationRate):
 		self.graph = graph
@@ -26,6 +29,7 @@ class Population:
 		self.crossover = crossoverFunc
 		self.mutation = mutationFunc
 		self.cuts = []
+		self.mutationRate = mutationRate
 
 	def getInitPopulation(self):
 		# generate population_size members
@@ -95,7 +99,7 @@ class Population:
 		
 		# run mutation on potential population		
 		for cut in new_pop:
-			if(random.rand() < self.mutationRate):
+			if(random.random() < self.mutationRate):
 				self.mutation(cut) 
 				
 		# put the new pop into the true population
@@ -168,9 +172,9 @@ def illustrateFullGraph(graph):
 	nx.draw_networkx_edges(graph, pos, edgelist=graph.edges(), edge_color='grey')
 	plt.pause(.1)
 
-def illustrateCut(graph, cutTitle, cut):
+def illustrateCut(outFile, graph, cutTitle, cut):
 	# draw in a new window
-	plt.figure()
+	f = plt.figure()
 
 	# set the title
 	plt.title(cutTitle)
@@ -209,6 +213,8 @@ def illustrateCut(graph, cutTitle, cut):
 	nx.draw_networkx_edges(graph, pos, edgelist=cutEdges, edge_color='black', width=1.4)
 	plt.pause(.1)
 
+	f.savefig(outFile + '/' + outFile + str(trialNumber) + 'GRAPH.pdf')
+
 def crossover1(parent1, parent2):
 	middle = int(math.floor((len(parent1)-1)/2))
 	end = len(parent1)-1
@@ -236,10 +242,10 @@ def crossover2(parent1, parent2):
 	while i < len(parent1):
 		# random bit if parent bits are different
 		if(parent1[i] != parent2[i]):
-			new_bit = 0
+			newBit = 0
 			
 			# newBit is 1 50% of the time
-			if(random.rand() > .5):
+			if(random.random() > .5):
 				newBit = 1
 			
 			child.append(newBit)
@@ -272,23 +278,29 @@ def mutation2(citizen):
 	# flip value at randLocation by XOR
 	citizen[randLocation] = citizen[randLocation] ^ 1
 	
-def runGeneticAlgorithm(graph, pop, numGenerations):
+def runGeneticAlgorithm(outFile, graph, pop, numGenerations):
+	fitnessList = []
 	i = 0
 
 	pop.getInitPopulation()
 	pop.sortByFitness()
-	illustrateCut(graph, 'Best Initial Cut', pop.cuts[0])
-	print pop.getFitness(pop.cuts[0])
-
+	illustrateCut(outFile, graph, 'Best Initial Cut', pop.cuts[0])
+	#print pop.getFitness(pop.getFitness(pop.cuts[0]))
+	
+	fitnessList.append(pop.getFitness(pop.cuts[0]))
 	while i < numGenerations:
 		pop.breedNewGeneration()
 		print pop.getFitness(pop.cuts[0])
 		i += 1
+		
+		fitnessList.append(pop.getFitness(pop.cuts[0]))
+		
+	illustrateCut(outFile, graph, 'Best Final Gen Cut', pop.cuts[0])
+	#print pop.getFitness(pop.cuts[0])
+	
+	return fitnessList[0], fitnessList
 
-	illustrateCut(graph, 'Best Final Gen Cut', pop.cuts[0])
-	print pop.getFitness(pop.cuts[0])
-
-def bruteForceSolution(graph):
+def bruteForceSolution(outFile, graph):
 	pop = Population(graph, 1, crossover1, mutation1, .5)
 
 	# make initial cut
@@ -314,7 +326,9 @@ def bruteForceSolution(graph):
 	print 'brute force'
 	print 'max ', maxPerformance
 	print 'soln ', maxCut
-	illustrateCut(graph, 'Brute Force Solution', maxCut)
+	illustrateCut(outFile + 'BF', graph, 'Brute Force Solution', maxCut)
+	
+	return maxPerformance
 
 def incrementCut(cut, position):
 	if(position == len(cut)):
@@ -326,24 +340,81 @@ def incrementCut(cut, position):
 			incrementCut(cut, position+1)
 	return
 
+def fitnessOverTime(outFile, fitnessList):
+	f = plt.figure()
+	
+	genNum = []
+	for i in range(len(fitnessList)):
+		genNum.append(i)
+	
+	plt.title('Gen v. Fitness')
+	plt.plot(genNum, fitnessList, 'bo',genNum, fitnessList, 'k')
+
+	plt.axis([0,genNum.pop() + 55, 0, fitnessList[0] + 500])
+	plt.show()
+	
+	f.savefig(outFile + '/' + outFile + str(trialNumber) + 'FOT.pdf')
+	
+def writeStats(outFile, maxPerformance, time):
+	f = open(outFile + '/' + outFile + '.dat', 'a')
+	
+	f.write('-------------------- RUN  ------------------\n')
+	f.write('Time(s): ' + str(time) + '\n')
+	f.write('Best fitness: ' + str(maxPerformance) + '\n')
+	f.close()	
+	
 def main():
 	random.seed() 
-	inputFile = sys.argv[1]
-	cityGraph = initializeGraph(inputFile)
-
 	# turn on pyplot's interactive mode to allow live updating of the graph
 	plt.ion()
+	
+	inputFile = sys.argv[1]
+	outFile = sys.argv[2]
+	runType = sys.argv[3] 
+	
+	cityGraph = initializeGraph(inputFile)
+	
+	global trialNumber 
+	if(runType == '0'):
+		start = time.time()
+		maxPerformance = bruteForceSolution(cityGraph)
+		finish = time.time() - start
+		writeStats(outFile, maxPerformance, finish)
+	
+	else: 
+		crossover = sys.argv[4]
+		
+		if(crossover == '0'):
+			crossover = crossover1
+		else:
+			crossover = crossover2
+			
+		mutation = sys.argv[5]
+		
+		if(mutation == '0'):
+			mutation = mutation1 
+		else:
+			mutation = mutation2
+		
+		for i in range(5):
+			start = time.time()
+			pop = Population(cityGraph, 100, crossover, mutation, .1)
+			maxPerformance, fitnessList = runGeneticAlgorithm(outFile, cityGraph, pop, 1) 
+			finish = time.time() - start
+			writeStats(outFile, maxPerformance, finish)
+			fitnessOverTime(outFile, fitnessList)
+			trialNumber += 1
 
-	illustrateFullGraph(cityGraph)
+	##illustrateFullGraph(cityGraph)
 
-	pop = Population(cityGraph, 50, crossover1, mutation1, .5)
+	#pop = Population(cityGraph, 50, crossover1, mutation1, .5)
 
 	# runGeneticAlgorithm(cityGraph, pop, 20)
 
-	bruteForceSolution(cityGraph)
+	#bruteForceSolution(cityGraph)
 
 	# keep the graphs up at the end
-	plt.ioff()
-	plt.show()
+	# plt.ioff()
+	# plt.show()
 if __name__ == "__main__":
     main()
