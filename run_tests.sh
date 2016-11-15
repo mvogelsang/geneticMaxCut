@@ -44,13 +44,13 @@ do
 
 done
 
+
 for i in 9 10 11 12
 do
-  echo $i
-	OUTFILE="BFRandom"$i
-	mkdir $OUTFILE
-	INFILE="formattedData/Random"$i".mc"
+    OUTFILE="BFRandom"$i
+    mkdir $OUTFILE
+    INFILE="formattedData/Random"$i".mc"
 
-	python main.py $INFILE $OUTFILE 1 0 1
+    python main.py $INFILE $OUTFILE 0
 
 done
