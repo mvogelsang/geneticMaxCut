@@ -127,24 +127,23 @@ def initializeGraph(filepath):
 	# open file
 	cityfile = open(filepath, "r") # open the file for reading
 
-	# the file parsing comes in two stages
-	# 1. read in the nodes and their coordinates
-	# 2. read in the edges in the graph
 	cityGraph = nx.Graph()
 	for line in cityfile:
-		splitLine = line.split(" ")
+		splitLine = line.split()
 
 		if len(splitLine) == 2:
-			numCities = splitLine[0]
+			numCities = int(splitLine[0])
 			i = 1
-			while i <= numCities:
+			while i < numCities:
 				cityGraph.add_node(str(i))
+				i += 1
 
 		if len(splitLine) == 3:
 			splitLine[0] = str(int(splitLine[0]))
 			splitLine[1] = str(int(splitLine[1]))
-			edgeWeight = int(splitLine[3])
+			edgeWeight = int(splitLine[2])
 			cityGraph.add_edge(splitLine[0], splitLine[1], weight=edgeWeight)
+			print cityGraph.edge[splitLine[0]][splitLine[1]]
 
 	cityfile.close()
 	return cityGraph
@@ -266,7 +265,7 @@ def mutation2(citizen):
 	# flip value at randLocation by XOR
 	citizen[randLocation] = citizen[randLocation] ^ 1
 
-def runGeneticAlgorithm(outFile, graph, pop, numGenerations):
+def runGeneticAlgorithm(outFile, graph, pop, minGenerations):
 	fitnessList = []
 	i = 0
 
@@ -352,10 +351,11 @@ def main():
 	random.seed()
 
 	inputFile = sys.argv[1]
-	runType = sys.argv[2]
+	minGenerations = sys.argv[2]
 	crossover = sys.argv[3]
 	mutation = sys.argv[4]
 
+	print inputFile
 	cityGraph = initializeGraph(inputFile)
 
 	if(crossover == '1'):
@@ -368,13 +368,13 @@ def main():
 	else:
 		mutation = mutation2
 
-	for i in range(3):
-		pop = Population(cityGraph, 100, crossover, mutation, .1)
-		runGeneticAlgorithm(outFile, cityGraph, pop, 200)
+	# for i in range(3):
+	pop = Population(cityGraph, 100, crossover, mutation, .1)
+	runGeneticAlgorithm(outFile, cityGraph, pop, minGenerations)
 
-		trialNumber += 1
+	trialNumber += 1
 
 	plt.ioff()
-    plt.show()
+	plt.show()
 if __name__ == "__main__":
     main()
