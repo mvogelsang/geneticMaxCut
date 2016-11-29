@@ -43,33 +43,19 @@ class Population:
 			# add new cut to population's cut
 			self.cuts.append(cut)
 
-	# (source: http://stackoverflow.com/questions/10324015/fitness-proportionate-selection-roulette-wheel-selection-in-python)
 	def parentSelect(self):
-		fitness_list = []
+		p1 = random.choice(self.cuts)
+		p2 = random.choice(self.cuts)
 
-		# create list of fitnesses
-		for cut in self.cuts:
-			fitness_list.append(self.getFitness(cut))
-
-		# sum up fitnesses
-		fitness_sum = 0
-		for value in fitness_list:
-			fitness_sum = fitness_sum + value
-
-		# find random number between 0 and fitness sum
-		prob = random.randint(0, int(fitness_sum))
-
-		# search until current value > fitness sum
-		current_value = 0
-		for i in range(self.size):
-			current_value = current_value + fitness_list[i]
-			if(current_value >= prob):
-				return self.cuts[i]
+		if(self.getFitness(p1) > self.getFitness(p2)):
+			return p1
+		else:
+			return p2
 
 	# generate new population
 	def breedNewGeneration(self):
 		new_pop = []
-		new_pop.append(self.cuts[0]) 
+		new_pop.append(self.cuts[0])
 
 		# breed population size times
 		for i in range(self.size):
@@ -96,32 +82,31 @@ class Population:
 
 		# breed best and worst matter what
 		new_pop.append(self.crossover(self.cuts[0], self.cuts[-1]))
-		
-		# run mutation on potential population		
+
+		# run mutation on potential population
 		i = 1
 		while i < len(new_pop):
 			cut = new_pop[i]
 			if(random.random() < self.mutationRate):
 				self.mutation(cut)
-			i += 1 
-				
+			i += 1
+
 		# put the new pop into the true population
 		self.cuts = new_pop
-		
+
 		# sort potential population
 		self.sortByFitness()
 
 		# keep only the best population size cuts
 		self.cuts = self.cuts[:self.size]
 
-	## put code shit
 	def sortByFitness(self):
 		self.cuts.sort(None, self.getFitness, True)
 
 	def getFitness(self, cut):
 		graph = self.graph
 		fitness = 0
-		
+
 		# iterate through each node in the graph
 		for i in range(0, len(cut)):
 			# if in cut 0, find all connected nodes
@@ -228,41 +213,41 @@ def crossover1(parent1, parent2):
 
 	#chop out pieces of parent1 and parent2 and make the child
 	#child = parent1[:randBegin] + parent2[randBegin:randEnd] + parent1[randEnd:]
-	
-	child = parent1[:] 
+
+	child = parent1[:]
 	child[randBegin:randEnd] = parent2[randBegin:randEnd]
-	
+
 	if len(child) != len(parent1):
 		print 'ERR!'
 
 	return child
 
 def crossover2(parent1, parent2):
-	child = [] 
-	
+	child = []
+
 	i = 0
 	# continue until len(child) == len(parent)
 	while i < len(parent1):
 		# random bit if parent bits are different
 		if(parent1[i] != parent2[i]):
 			newBit = 0
-			
+
 			# newBit is 1 50% of the time
 			if(random.random() > .5):
 				newBit = 1
-			
+
 			child.append(newBit)
 		# same bit as parents if parent bits are same
 		else:
 			child.append(parent1[i])
-		
+
 		i += 1
-		
+
 	if len(child) != len(parent1):
 		print 'ERR!'
-	
-	return child 
-				
+
+	return child
+
 def mutation1(citizen):
 	# calculate number of flips to perform
 	numFlips = random.randint(0, len(citizen)-1)
@@ -276,64 +261,64 @@ def mutation1(citizen):
 
 def mutation2(citizen):
 	# get random location
-	randLocation = random.randint(0, len(citizen) - 1) 
-	
+	randLocation = random.randint(0, len(citizen) - 1)
+
 	# flip value at randLocation by XOR
 	citizen[randLocation] = citizen[randLocation] ^ 1
-	
+
 def runGeneticAlgorithm(outFile, graph, pop, numGenerations):
 	fitnessList = []
 	i = 0
-	
+
 	gaBestFitnesses = []
 	wocBestFitnesses = []
 	gaTimes = []
-	wocTimes = [] 
-	
+	wocTimes = []
+
 	pop.getInitPopulation()
 	pop.sortByFitness()
 	#illustrateCut(outFile, graph, 'Best Initial Cut', pop.cuts[0])
 	#print pop.getFitness(pop.getFitness(pop.cuts[0]))
-	
+
 	fitnessList.append(pop.getFitness(pop.cuts[0]))
-	
+
 	while i < numGenerations:
 		start = time.time()
 		pop.breedNewGeneration()
 		fitnessList.append(pop.getFitness(pop.cuts[0]))
-		
+
 		i += 1
-			
+
 		if(i is 10 or i is 50 or i is 100 or i is 200):
 			gaTimes.append(time.time() - start)
 			gaBestFitnesses.append(fitnessList[-1])
-			
+
 			aggStart = time.time()
 			wocFitness, wocCut = aggregate(graph, pop)
 			wocBestFitnesses.append(wocFitness)
 			aggFinish = time.time() - aggStart
-			wocTimes.append(aggFinish) 
+			wocTimes.append(aggFinish)
 			illustrateCut(outFile, 'WOC' + str(i), graph, 'WOC Cut', wocCut)
-	
+
 	illustrateCut(outFile, 'GA', graph, 'Best Final Gen Cut', pop.cuts[0])
-	writeGAStats(outFile, fitnessList[-1], gaBestFitnesses, wocBestFitnesses, gaTimes, wocTimes) 
-	fitnessOverTime(outFile, fitnessList) 
-		
+	writeGAStats(outFile, fitnessList[-1], gaBestFitnesses, wocBestFitnesses, gaTimes, wocTimes)
+	fitnessOverTime(outFile, fitnessList)
+
 def aggregate(graph, pop):
 	cutList = pop.cuts
 	membersToTake = int(math.ceil(float(len(cutList))*.3))
-	cutList = cutList[:membersToTake]	
+	cutList = cutList[:membersToTake]
 	voteList=[]
 
 	i=0
 	while i < len(graph.nodes()):
 		voteList.append({'0':0, '1': 0})
 		i += 1
-		
+
 	for cut in cutList:
 		if cut[0] == 0:
 			flipBits(cut)
-			
+
 		i=0
 		while i < len(graph.nodes()):
 			voteList[i][str(cut[i])] += 1
@@ -352,7 +337,7 @@ def aggregate(graph, pop):
 			else:
 				wocSoln.append(1)
 		i += 1
-	
+
 	for i in tieTracker:
 		originalScore = pop.getFitness(wocSoln)
 		wocSoln[i]=1
@@ -367,8 +352,8 @@ def flipBits(cut):
 		if bit == 0:
 			bit = 1
 		else:
-			bit = 0 
-	
+			bit = 0
+
 def bruteForceSolution(outFile, graph):
 	pop = Population(graph, 1, crossover1, mutation1, .5)
 
@@ -379,7 +364,7 @@ def bruteForceSolution(outFile, graph):
 	while i < numCities:
 		cut.append(0)
 		i += 1
-		
+
 	i=0
 	maxPerformance = -1
 	maxCut = []
@@ -396,9 +381,9 @@ def bruteForceSolution(outFile, graph):
 	print 'max ', maxPerformance
 	print 'soln ', maxCut
 	illustrateCut(outFile, 'BF', graph, 'Brute Force Solution', maxCut)
-	
-	return maxPerformance	
-	 
+
+	return maxPerformance
+
 def incrementCut(cut, position):
 	if(position == len(cut)):
 		return
@@ -411,93 +396,93 @@ def incrementCut(cut, position):
 
 def fitnessOverTime(outFile, fitnessList):
 	f = plt.figure()
-	
+
 	genNum = []
 	for i in range(len(fitnessList)):
 		genNum.append(i)
-	
+
 	plt.title('Gen v. Fitness')
 	plt.plot(genNum, fitnessList, 'bo',genNum, fitnessList, 'k')
 
 	plt.axis([0,genNum.pop() + 55, 0, fitnessList[-1] + 500])
 	plt.show()
-	
+
 	f.savefig(outFile + '/' + outFile + str(trialNumber) + 'FOT.pdf')
-	
+
 def writeBFStats(outFile, maxPerformance, time):
 	f = open(outFile + '/' + outFile + '.dat', 'a')
-	
+
 	f.write('-------------------- RUN  ------------------\n')
 	f.write('Time(s): ' + str(time) + '\n')
 	f.write('Best fitness: ' + str(maxPerformance) + '\n')
-	f.close()	
+	f.close()
 
 def writeGAStats(outFile, maxPerformance, gaBestFitnesses, wocBestFitnesses, gaTimes, wocTimes):
 	f = open(outFile + '/' + outFile + '.dat', 'a')
-	
+
 	f.write('-------------------- RUN  ------------------\n')
 	f.write('Best GA fitness: ' + str(maxPerformance) + '\n')
-	
+
 	f.write('GA fitness per 10, 50, 100, 200: ')
 	for fitness in gaBestFitnesses:
 		f.write(str(fitness) + ' ')
 	f.write('\n')
-	
+
 	f.write('WOC fitness per 10, 50, 100, 200: ')
 	for fitness in wocBestFitnesses:
 		f.write(str(fitness) + ' ')
 	f.write('\n')
-	
+
 	f.write('GA times per 10, 50, 100, 200: ')
 	for time in gaTimes:
 		f.write(str(time) + ' ')
 	f.write('\n')
-	
+
 	f.write('Aggregation times per 10, 50, 100, 200: ')
 	for time in wocTimes:
 		f.write(str(time) + ' ')
 	f.write('\n')
-	
+
 	f.close()
-	
+
 def main():
-	random.seed() 
+	random.seed()
 	# turn on pyplot's interactive mode to allow live updating of the graph
 	plt.ion()
-	
+
 	inputFile = sys.argv[1]
 	outFile = sys.argv[2]
-	runType = sys.argv[3] 
-	
+	runType = sys.argv[3]
+
 	cityGraph = initializeGraph(inputFile)
-	
-	global trialNumber 
+
+	global trialNumber
 	if(runType == '0'):
 		start = time.time()
 		maxPerformance = bruteForceSolution(outFile, cityGraph)
 		finish = time.time() - start
 		writeBFStats(outFile, maxPerformance, finish)
-	
-	else: 
+
+	else:
 		crossover = sys.argv[4]
-		
+
 		if(crossover == '0'):
 			crossover = crossover1
 		else:
 			crossover = crossover2
-			
+
 		mutation = sys.argv[5]
-		
+
 		if(mutation == '0'):
-			mutation = mutation1 
+			mutation = mutation1
 		else:
 			mutation = mutation2
-		
+
 		for i in range(3):
 			start = time.time()
 			pop = Population(cityGraph, 100, crossover, mutation, .1)
-			runGeneticAlgorithm(outFile, cityGraph, pop, 200) 
-		
+			runGeneticAlgorithm(outFile, cityGraph, pop, 200)
+
 			trialNumber += 1
 
 	# keep the graphs up at the end
