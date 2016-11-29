@@ -134,14 +134,16 @@ def initializeGraph(filepath):
 	for line in cityfile:
 		splitLine = line.split(" ")
 
-		if len(splitLine) == 3:
-			# initialize a cities object containing each city and its coordinates
-			cityGraph.add_node(splitLine[0], x=float(splitLine[1]), y=float(splitLine[2]))
-
 		if len(splitLine) == 2:
+			numCities = splitLine[0]
+			i = 1
+			while i <= numCities:
+				cityGraph.add_node(str(i))
+
+		if len(splitLine) == 3:
 			splitLine[0] = str(int(splitLine[0]))
 			splitLine[1] = str(int(splitLine[1]))
-			edgeWeight = math.hypot(cityGraph.node[splitLine[0]]['x'] - cityGraph.node[splitLine[1]]['x'], cityGraph.node[splitLine[0]]['y'] - cityGraph.node[splitLine[1]]['y'])
+			edgeWeight = int(splitLine[3])
 			cityGraph.add_edge(splitLine[0], splitLine[1], weight=edgeWeight)
 
 	cityfile.close()
@@ -160,7 +162,7 @@ def illustrateFullGraph(graph):
 	nx.draw_networkx_edges(graph, pos, edgelist=graph.edges(), edge_color='grey')
 	plt.pause(.1)
 
-def illustrateCut(outFile, g_type, graph, cutTitle, cut):
+def illustrateCut(graph, cutTitle, cut):
 	# draw in a new window
 	f = plt.figure()
 
@@ -200,8 +202,6 @@ def illustrateCut(outFile, g_type, graph, cutTitle, cut):
 
 	nx.draw_networkx_edges(graph, pos, edgelist=cutEdges, edge_color='black', width=1.4)
 	plt.pause(.1)
-
-	f.savefig(outFile + '/' + g_type + outFile + str(trialNumber) + 'GRAPH.pdf')
 
 def crossover1(parent1, parent2):
 	middle = int(math.floor((len(parent1)-1)/2))
@@ -270,38 +270,17 @@ def runGeneticAlgorithm(outFile, graph, pop, numGenerations):
 	fitnessList = []
 	i = 0
 
-	gaBestFitnesses = []
-	wocBestFitnesses = []
-	gaTimes = []
-	wocTimes = []
-
 	pop.getInitPopulation()
 	pop.sortByFitness()
-	#illustrateCut(outFile, graph, 'Best Initial Cut', pop.cuts[0])
-	#print pop.getFitness(pop.getFitness(pop.cuts[0]))
 
 	fitnessList.append(pop.getFitness(pop.cuts[0]))
 
-	while i < numGenerations:
-		start = time.time()
+	while i < 10 or i < minGenerations or float(fitnessList[-1] - fitnessList[-10])/float(fitnessList[-10])*100 < .0001:
 		pop.breedNewGeneration()
 		fitnessList.append(pop.getFitness(pop.cuts[0]))
-
 		i += 1
 
-		if(i is 10 or i is 50 or i is 100 or i is 200):
-			gaTimes.append(time.time() - start)
-			gaBestFitnesses.append(fitnessList[-1])
-
-			aggStart = time.time()
-			wocFitness, wocCut = aggregate(graph, pop)
-			wocBestFitnesses.append(wocFitness)
-			aggFinish = time.time() - aggStart
-			wocTimes.append(aggFinish)
-			illustrateCut(outFile, 'WOC' + str(i), graph, 'WOC Cut', wocCut)
-
-	illustrateCut(outFile, 'GA', graph, 'Best Final Gen Cut', pop.cuts[0])
-	writeGAStats(outFile, fitnessList[-1], gaBestFitnesses, wocBestFitnesses, gaTimes, wocTimes)
+	illustrateCut(graph, 'Best Final Gen Cut', pop.cuts[0])
 	fitnessOverTime(outFile, fitnessList)
 
 def aggregate(graph, pop):
@@ -354,47 +333,7 @@ def flipBits(cut):
 		else:
 			bit = 0
 
-def bruteForceSolution(outFile, graph):
-	pop = Population(graph, 1, crossover1, mutation1, .5)
-
-	# make initial cut
-	cut = []
-	numCities = len(graph.nodes())
-	i = 0
-	while i < numCities:
-		cut.append(0)
-		i += 1
-
-	i=0
-	maxPerformance = -1
-	maxCut = []
-	numIterations = (2**numCities)
-	while i < numIterations:
-		incrementCut(cut, 0)
-		performance = pop.getFitness(cut)
-		if( performance > maxPerformance ):
-			maxPerformance = performance
-			maxCut = cut[:]
-		i += 1
-
-	print 'brute force'
-	print 'max ', maxPerformance
-	print 'soln ', maxCut
-	illustrateCut(outFile, 'BF', graph, 'Brute Force Solution', maxCut)
-
-	return maxPerformance
-
-def incrementCut(cut, position):
-	if(position == len(cut)):
-		return
-	else:
-		cut[position] += 1
-		if cut[position] == 2:
-			cut[position] = 0
-			incrementCut(cut, position+1)
-	return
-
-def fitnessOverTime(outFile, fitnessList):
+def fitnessOverTime(fitnessList):
 	f = plt.figure()
 
 	genNum = []
@@ -407,86 +346,35 @@ def fitnessOverTime(outFile, fitnessList):
 	plt.axis([0,genNum.pop() + 55, 0, fitnessList[-1] + 500])
 	plt.show()
 
-	f.savefig(outFile + '/' + outFile + str(trialNumber) + 'FOT.pdf')
-
-def writeBFStats(outFile, maxPerformance, time):
-	f = open(outFile + '/' + outFile + '.dat', 'a')
-
-	f.write('-------------------- RUN  ------------------\n')
-	f.write('Time(s): ' + str(time) + '\n')
-	f.write('Best fitness: ' + str(maxPerformance) + '\n')
-	f.close()
-
-def writeGAStats(outFile, maxPerformance, gaBestFitnesses, wocBestFitnesses, gaTimes, wocTimes):
-	f = open(outFile + '/' + outFile + '.dat', 'a')
-
-	f.write('-------------------- RUN  ------------------\n')
-	f.write('Best GA fitness: ' + str(maxPerformance) + '\n')
-
-	f.write('GA fitness per 10, 50, 100, 200: ')
-	for fitness in gaBestFitnesses:
-		f.write(str(fitness) + ' ')
-	f.write('\n')
-
-	f.write('WOC fitness per 10, 50, 100, 200: ')
-	for fitness in wocBestFitnesses:
-		f.write(str(fitness) + ' ')
-	f.write('\n')
-
-	f.write('GA times per 10, 50, 100, 200: ')
-	for time in gaTimes:
-		f.write(str(time) + ' ')
-	f.write('\n')
-
-	f.write('Aggregation times per 10, 50, 100, 200: ')
-	for time in wocTimes:
-		f.write(str(time) + ' ')
-	f.write('\n')
-
-	f.close()
-
 def main():
-	random.seed()
-	# turn on pyplot's interactive mode to allow live updating of the graph
 	plt.ion()
 
+	random.seed()
+
 	inputFile = sys.argv[1]
-	outFile = sys.argv[2]
-	runType = sys.argv[3]
+	runType = sys.argv[2]
+	crossover = sys.argv[3]
+	mutation = sys.argv[4]
 
 	cityGraph = initializeGraph(inputFile)
 
-	global trialNumber
-	if(runType == '0'):
-		start = time.time()
-		maxPerformance = bruteForceSolution(outFile, cityGraph)
-		finish = time.time() - start
-		writeBFStats(outFile, maxPerformance, finish)
-
+	if(crossover == '1'):
+		crossover = crossover1
 	else:
-		crossover = sys.argv[4]
+		crossover = crossover2
 
-		if(crossover == '0'):
-			crossover = crossover1
-		else:
-			crossover = crossover2
+	if(mutation == '1'):
+		mutation = mutation1
+	else:
+		mutation = mutation2
 
-		mutation = sys.argv[5]
+	for i in range(3):
+		pop = Population(cityGraph, 100, crossover, mutation, .1)
+		runGeneticAlgorithm(outFile, cityGraph, pop, 200)
 
-		if(mutation == '0'):
-			mutation = mutation1
-		else:
-			mutation = mutation2
+		trialNumber += 1
 
-		for i in range(3):
-			start = time.time()
-			pop = Population(cityGraph, 100, crossover, mutation, .1)
-			runGeneticAlgorithm(outFile, cityGraph, pop, 200)
-
-			trialNumber += 1
-
-	# keep the graphs up at the end
-	# plt.ioff()
-	# plt.show()
+	plt.ioff()
+    plt.show()
 if __name__ == "__main__":
     main()
