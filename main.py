@@ -133,26 +133,23 @@ def initializeGraph(filepath):
 
 		if len(splitLine) == 2:
 			numCities = int(splitLine[0])
-			i = 1
+			i = 0
 			while i < numCities:
 				cityGraph.add_node(str(i))
 				i += 1
 
 		if len(splitLine) == 3:
-			splitLine[0] = str(int(splitLine[0]))
-			splitLine[1] = str(int(splitLine[1]))
+			splitLine[0] = str(int(splitLine[0])-1)
+			splitLine[1] = str(int(splitLine[1])-1)
 			edgeWeight = int(splitLine[2])
 			cityGraph.add_edge(splitLine[0], splitLine[1], weight=edgeWeight)
-			print cityGraph.edge[splitLine[0]][splitLine[1]]
 
 	cityfile.close()
 	return cityGraph
 
 def illustrateFullGraph(graph):
-	# force nodes to render according to their x,y position and not randomly
-	pos = {}
-	for node in graph.nodes():
-	    pos[node] = [graph.node[node]["x"], graph.node[node]["y"]]
+	pos = nx.circular_layout(graph)
+
 
 	plt.figure()
 	plt.title('Full Graph')
@@ -168,10 +165,7 @@ def illustrateCut(graph, cutTitle, cut):
 	# set the title
 	plt.title(cutTitle)
 
-	# force nodes to render according to their x,y position and not randomly
-	pos = {}
-	for node in graph.nodes():
-	    pos[node] = [graph.node[node]["x"], graph.node[node]["y"]]
+	pos = nx.circular_layout(graph)
 
 	# get the two separate sets of nodes
 	s1 = []
@@ -265,7 +259,7 @@ def mutation2(citizen):
 	# flip value at randLocation by XOR
 	citizen[randLocation] = citizen[randLocation] ^ 1
 
-def runGeneticAlgorithm(outFile, graph, pop, minGenerations):
+def runGeneticAlgorithm( graph, pop, minGenerations):
 	fitnessList = []
 	i = 0
 
@@ -274,13 +268,28 @@ def runGeneticAlgorithm(outFile, graph, pop, minGenerations):
 
 	fitnessList.append(pop.getFitness(pop.cuts[0]))
 
-	while i < 10 or i < minGenerations or float(fitnessList[-1] - fitnessList[-10])/float(fitnessList[-10])*100 < .0001:
+	while i < 10 or i < minGenerations or float(fitnessList[-1] - fitnessList[-10])/float(fitnessList[-10])*100 > .0001:
 		pop.breedNewGeneration()
 		fitnessList.append(pop.getFitness(pop.cuts[0]))
 		i += 1
+		print fitnessList[-1]
 
-	illustrateCut(graph, 'Best Final Gen Cut', pop.cuts[0])
-	fitnessOverTime(outFile, fitnessList)
+	# illustrateCut(graph, 'Best Final Gen Cut', pop.cuts[0])
+	fitnessOverTime(fitnessList)
+
+def moreOnesThanZeroes(cut):
+	ones = 0
+	zeroes = 0
+	for bit in cut:
+		if bit == 0:
+			zeroes += 1
+		else:
+			ones += 1
+
+	if ones > zeroes:
+		return True
+	else:
+		return False
 
 def aggregate(graph, pop):
 	cutList = pop.cuts
@@ -294,7 +303,9 @@ def aggregate(graph, pop):
 		i += 1
 
 	for cut in cutList:
-		if cut[0] == 0:
+		if cut[0] ==1:
+			flipBits(cut)
+		if moreOnesThanZeroes(cut):
 			flipBits(cut)
 
 		i=0
@@ -310,20 +321,23 @@ def aggregate(graph, pop):
 			wocSoln.append(0)
 		else:
 			if voteList[i]['0'] == voteList[i]['1']:
-				wocSoln.append(0)
+				wocSoln.append(-1)
 				tieTracker.append(i)
 			else:
 				wocSoln.append(1)
 		i += 1
 
 	for i in tieTracker:
-		originalScore = pop.getFitness(wocSoln)
+		wocSoln[i]=0
+		zeroScore = pop.getFitness(wocSoln)
 		wocSoln[i]=1
-		newScore = pop.getFitness(wocSoln)
-		if originalScore > newScore:
+		oneScore = pop.getFitness(wocSoln)
+		if zeroScore > oneScore:
 			wocSoln[i] = 0
+		else:
+			wocSoln[i] = 1
 
-	return pop.getFitness(wocSoln), wocSoln
+	return wocSoln
 
 def flipBits(cut):
 	for bit in cut:
@@ -351,12 +365,13 @@ def main():
 	random.seed()
 
 	inputFile = sys.argv[1]
-	minGenerations = sys.argv[2]
+	minGenerations = int(sys.argv[2])
 	crossover = sys.argv[3]
 	mutation = sys.argv[4]
 
 	print inputFile
 	cityGraph = initializeGraph(inputFile)
+	# illustrateFullGraph(cityGraph)
 
 	if(crossover == '1'):
 		crossover = crossover1
@@ -370,9 +385,14 @@ def main():
 
 	# for i in range(3):
 	pop = Population(cityGraph, 100, crossover, mutation, .1)
-	runGeneticAlgorithm(outFile, cityGraph, pop, minGenerations)
-
-	trialNumber += 1
+	start = time.time()
+	runGeneticAlgorithm(cityGraph, pop, minGenerations)
+	mid = time.time() - start
+	woc = aggregate(cityGraph, pop)
+	finish = time.time() - start
+	print 'woc: ', pop.getFitness(woc)
+	print mid
+	print finish
 
 	plt.ioff()
 	plt.show()
