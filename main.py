@@ -346,7 +346,14 @@ def flipBits(cut):
 		else:
 			bit = 0
 
-def fitnessOverTime(fitnessList, inputPath, iteration):
+def fitnessOverTime(fitnessList, inputPath, crossover, mutation, iteration):
+	pathArr = inputPath.split('/')
+	filename = pathArr[-1]
+	category = pathArr[-2]
+	runCombo = 'c'+str(crossover)+'m'+str(mutation)
+	outPath = './results/'+ runCombo + '/charts/' + category + '_' + filename +'_' + str(iteration)+ '.png'
+	optimal = getOptimalDist(category, filename)
+
 	plt.ion()
 	f = plt.figure()
 
@@ -354,11 +361,15 @@ def fitnessOverTime(fitnessList, inputPath, iteration):
 	for i in range(len(fitnessList)):
 		genNum.append(i)
 
-	plt.title('Gen v. Fitness')
-	plt.plot(genNum, fitnessList, 'bo',genNum, fitnessList, 'k')
-	plt.axis([0,genNum.pop() + 55, 0, fitnessList[-1] + 500])
-	plt.show()
-	plt.ioff()
+	plt.title('Fitness v. Generation\n' + 'Crossover: ' + str(crossover) + ' Mutation: ' + str(mutation) + ' Trial: ' + str(iteration) )
+	plt.plot(genNum, fitnessList, '.75', genNum, fitnessList, 'bx')
+	plt.plot((genNum[0], (genNum[-1]*1.1+1)), (optimal, optimal), 'r-')
+	plt.axis([0,(genNum[-1]*1.1+1), 0, fitnessList[-1]*1.25])
+	plt.draw()
+	plt.pause(.0001)
+
+	f.savefig(outPath)
+	plt.close(f)
 
 def writeData(inPath, crossover, mutation, avgGeneticDist, avgGeneticTime, avgWocDist, avgWocTime):
 	pathArr = inPath.split('/')
@@ -441,7 +452,7 @@ def main():
 		geneticTimeTracker.append(geneticRuntime)
 		wocTimeTracker.append(wocRuntime)
 
-		fitnessOverTime(fitnessList, inputPath, i)
+		fitnessOverTime(fitnessList, inputPath, crossoverChoice, mutationChoice, i+1)
 
 	geneticPerformanceAverage = getAvg(geneticPerfTracker)
 	wocPerformanceAverage = getAvg(wocPerfTracker)
