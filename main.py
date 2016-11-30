@@ -274,8 +274,8 @@ def runGeneticAlgorithm( graph, pop, minGenerations):
 		i += 1
 		print fitnessList[-1]
 
-	# illustrateCut(graph, 'Best Final Gen Cut', pop.cuts[0])
-	fitnessOverTime(fitnessList)
+	return fitnessList
+
 
 def moreOnesThanZeroes(cut):
 	ones = 0
@@ -346,7 +346,8 @@ def flipBits(cut):
 		else:
 			bit = 0
 
-def fitnessOverTime(fitnessList):
+def fitnessOverTime(fitnessList, inputPath, iteration):
+	plt.ion()
 	f = plt.figure()
 
 	genNum = []
@@ -355,46 +356,104 @@ def fitnessOverTime(fitnessList):
 
 	plt.title('Gen v. Fitness')
 	plt.plot(genNum, fitnessList, 'bo',genNum, fitnessList, 'k')
-
 	plt.axis([0,genNum.pop() + 55, 0, fitnessList[-1] + 500])
 	plt.show()
+	plt.ioff()
+
+def writeData(inPath, crossover, mutation, avgGeneticDist, avgGeneticTime, avgWocDist, avgWocTime):
+	pathArr = inPath.split('/')
+	filename = pathArr[-1]
+	category = pathArr[-2]
+	runCombo = 'c'+str(crossover)+'m'+str(mutation)
+
+	outPath = './results/'+ runCombo + '/' + category + '.res'
+
+	optimal = getOptimalDist(category, filename)
+	line  = filename + ' ' + str(optimal) + ' ' + str(avgGeneticDist) + ' ' + str(avgGeneticTime) + ' ' + str(avgWocDist) + ' ' + str(avgWocTime) + '\n'
+	f = open(outPath, 'a+')
+	f.write(line)
+	f.close()
+
+def getOptimalDist(category, filename):
+	infoPath = './data/optimalValues/' + category + '.opt'
+	f = open(infoPath, 'r')
+	for line in f:
+		if filename in line:
+			data = line.split()
+			optimal = int(data[-1])
+			break
+	f.close()
+	return optimal
+
+def getAvg(numList):
+	total = 0.0
+	for num in numList:
+		total += float(num)
+	avg = total/float(len(numList))
+	return avg
 
 def main():
-	plt.ion()
+
+	inputPath = sys.argv[1]
+	minGenerations = int(sys.argv[2])
+	crossoverChoice = sys.argv[3]
+	mutationChoice = sys.argv[4]
 
 	random.seed()
 
-	inputFile = sys.argv[1]
-	minGenerations = int(sys.argv[2])
-	crossover = sys.argv[3]
-	mutation = sys.argv[4]
-
-	print inputFile
-	cityGraph = initializeGraph(inputFile)
+	print inputPath
+	cityGraph = initializeGraph(inputPath)
 	# illustrateFullGraph(cityGraph)
 
-	if(crossover == '1'):
+	if(crossoverChoice == '1'):
 		crossover = crossover1
 	else:
 		crossover = crossover2
 
-	if(mutation == '1'):
+	if(mutationChoice == '1'):
 		mutation = mutation1
 	else:
 		mutation = mutation2
 
-	# for i in range(3):
-	pop = Population(cityGraph, 100, crossover, mutation, .1)
-	start = time.time()
-	runGeneticAlgorithm(cityGraph, pop, minGenerations)
-	mid = time.time() - start
-	woc = aggregate(cityGraph, pop)
-	finish = time.time() - start
-	print 'woc: ', pop.getFitness(woc)
-	print mid
-	print finish
+	geneticPerfTracker = []
+	wocPerfTracker = []
+	geneticTimeTracker = []
+	wocTimeTracker = []
 
-	plt.ioff()
-	plt.show()
+	for i in range(2):
+		fitnessList = []
+		print 'input file: ' + inputPath
+		print 'trial: ' + str(i)
+		pop = Population(cityGraph, 100, crossover, mutation, .1)
+		start = time.time()
+		fitnessList = runGeneticAlgorithm(cityGraph, pop, minGenerations)
+		mid = time.time()
+		woc = aggregate(cityGraph, pop)
+		finish = time.time()
+
+		geneticPerformance = pop.getFitness(pop.cuts[0])
+		wocPerformance = pop.getFitness(woc)
+		geneticRuntime = mid - start
+		wocRuntime = finish - mid
+
+		geneticPerfTracker.append(geneticPerformance)
+		wocPerfTracker.append(wocPerformance)
+		geneticTimeTracker.append(geneticRuntime)
+		wocTimeTracker.append(wocRuntime)
+
+		fitnessOverTime(fitnessList, inputPath, i)
+
+	geneticPerformanceAverage = getAvg(geneticPerfTracker)
+	wocPerformanceAverage = getAvg(wocPerfTracker)
+	geneticRuntimeAverage = getAvg(geneticTimeTracker)
+	wocRuntimeAverage = getAvg(wocTimeTracker)
+	print 'geneticPerformanceAverage: ' + str(geneticPerformanceAverage)
+	print 'wocPerformanceAverage: ' + str(wocPerformanceAverage)
+	print 'geneticRuntimeAverage: ' + str(geneticRuntimeAverage)
+	print 'wocRuntimeAverage: ' + str(wocRuntimeAverage)
+	print '------------\n'
+
+	writeData(inputPath, crossoverChoice, mutationChoice, geneticPerformanceAverage, geneticRuntimeAverage, wocPerformanceAverage, wocRuntimeAverage)
+
 if __name__ == "__main__":
     main()
