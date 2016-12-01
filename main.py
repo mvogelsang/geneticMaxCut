@@ -491,7 +491,7 @@ def main():
 
 	inputPath = ''
 	minGenerations = 20
-	numtrials = 1
+	numtrials = 3
 	crossoverChoice = sys.argv[1]
 	mutationChoice = sys.argv[2]
 	rudyFiles = os.listdir('./data/rudy')
