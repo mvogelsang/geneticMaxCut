@@ -330,12 +330,10 @@ def aggregate(graph, pop):
 	for i,edge in enumerate(edgeList):
 		if graph.edge[edge[0]][edge[1]]['popularity'] == 0:
 			endOfUseful = i
-			print 'endOfUseful: ' + str(i)
 			break
 	edgeList = edgeList[0:endOfUseful]
 
 	for i,edge in enumerate(edgeList):
-		print str(i)
 		putEdgeIntoCut( pop, wocSoln, voteList, edge)
 
 	for i in range(len(wocSoln)):
