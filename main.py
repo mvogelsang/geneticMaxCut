@@ -9,6 +9,7 @@ import sys
 import math
 import time
 import random
+import os
 import networkx as nx
 import matplotlib.pyplot as plt
 from Tkinter import *
@@ -246,18 +247,18 @@ def mutation1(citizen):
 	numFlips = random.randint(0, len(citizen)-1)
 
 	i = 0
-	# perform specified flips by XORing value at randLocation
+	# perform specified flips at randLocation
 	while i < numFlips:
 		randLocation = random.randint(0, len(citizen)-1)
-		citizen[randLocation] = citizen[randLocation] ^ 1
+		citizen[randLocation] = flipOfBit(citizen[randLocation])
 		i += 1
 
 def mutation2(citizen):
 	# get random location
 	randLocation = random.randint(0, len(citizen) - 1)
 
-	# flip value at randLocation by XOR
-	citizen[randLocation] = citizen[randLocation] ^ 1
+	# flip value at randLocation
+	citizen[randLocation] = flipOfBit(citizen[randLocation])
 
 def runGeneticAlgorithm( graph, pop, minGenerations):
 	fitnessList = []
@@ -268,11 +269,11 @@ def runGeneticAlgorithm( graph, pop, minGenerations):
 
 	fitnessList.append(pop.getFitness(pop.cuts[0]))
 
-	while i < 10 or i < minGenerations or float(fitnessList[-1] - fitnessList[-10])/float(fitnessList[-10])*100 > .0001:
+	while i < 10 or i < minGenerations or float(fitnessList[-1] - fitnessList[-10])/float(fitnessList[-10])*100 > .00001:
 		pop.breedNewGeneration()
 		fitnessList.append(pop.getFitness(pop.cuts[0]))
 		i += 1
-		print fitnessList[-1]
+		# print fitnessList[-1]
 
 	return fitnessList
 
@@ -314,20 +315,30 @@ def aggregate(graph, pop):
 			i += 1
 
 	wocSoln = []
-	tieTracker = []
-	i=0
-	while i < len(graph.nodes()):
-		if voteList[i]['0'] > voteList[i]['1']:
-			wocSoln.append(0)
-		else:
-			if voteList[i]['0'] == voteList[i]['1']:
-				wocSoln.append(-1)
-				tieTracker.append(i)
-			else:
-				wocSoln.append(1)
-		i += 1
+	for i in range(graph.number_of_nodes()):
+		wocSoln.append(-1)
 
-	for i in tieTracker:
+	for edge in graph.edges():
+		graph.edge[edge[0]][edge[1]]['popularity'] = 0
+
+	for cut in cutList:
+		alterEdgePopularityByCut(graph, cut)
+
+	edgeList = graph.edges()
+	edgeList.sort(key = lambda x: graph[x[0]][x[1]]['popularity'], reverse=True)
+
+	for i,edge in enumerate(edgeList):
+		if graph.edge[edge[0]][edge[1]]['popularity'] == 0:
+			endOfUseful = i
+			print 'endOfUseful: ' + str(i)
+			break
+	edgeList = edgeList[0:endOfUseful]
+
+	for i,edge in enumerate(edgeList):
+		print str(i)
+		putEdgeIntoCut( pop, wocSoln, voteList, edge)
+
+	for i in range(len(wocSoln)):
 		wocSoln[i]=0
 		zeroScore = pop.getFitness(wocSoln)
 		wocSoln[i]=1
@@ -339,12 +350,85 @@ def aggregate(graph, pop):
 
 	return wocSoln
 
+def putEdgeIntoCut( pop, cut, voteList, edge):
+	indexA = int(edge[0])
+	indexB = int(edge[1])
+	placementA = alreadyPlaced(cut[indexA])
+	placementB = alreadyPlaced(cut[indexB])
+	if(placementA and not placementB):
+		bitToPlace = cut[indexA]
+		cut[indexB] = flipOfBit(bitToPlace)
+		return
+
+	if(not placementA and placementB):
+		bitToPlace = cut[indexB]
+		cut[indexA] = flipOfBit(bitToPlace)
+		return
+
+	if(not placementA and not placementB):
+		votesForA0 = voteList[indexA]['0']
+		votesForB0 = voteList[indexB]['0']
+		if(votesForA0 > votesForB0):
+			cut[indexA] = 0
+			cut[indexB] = 1
+			return
+
+		if(votesForA0 < votesForB0):
+			cut[indexA] = 1
+			cut[indexB] = 0
+			return
+
+		if(votesForA0 == votesForB0):
+			choice1 = cut[:]
+			choice1[indexA] = 0
+			choice1[indexB] = 1
+
+			choice2 = cut[:]
+			choice2[indexA] = 1
+			choice2[indexB] = 0
+
+			fit1 = pop.getFitness(choice1)
+			fit2 = pop.getFitness(choice2)
+
+			if(fit1 >= fit2):
+				cut = choice1
+				return
+			else:
+				cut = choice2
+				return
+	if(placementA and placementB):
+		return
+
+
+def alreadyPlaced(setIdentifier):
+	if setIdentifier == 0 or setIdentifier == 1:
+		return True
+	else:
+		return False
+
+def alterEdgePopularityByCut(graph, cut):
+	# iterate through each node in the graph
+		for i in range(0, len(cut)):
+			# if in cut 0, find all connected nodes
+			if(cut[i] == 0):
+				city = str(i)
+				neighbors = graph.neighbors(city)
+				# find all neigbors in cut 1
+				for neighbor in neighbors:
+					j = int(neighbor)
+					# add weight of edge if it crosses the cut
+					if(cut[j] == 1):
+						graph.edge[city][neighbor]['popularity'] += 1
+
 def flipBits(cut):
-	for bit in cut:
-		if bit == 0:
-			bit = 1
-		else:
-			bit = 0
+	for i,bit in enumerate(cut):
+		cut[i] = flipOfBit(bit)
+
+def flipOfBit(bit):
+	if bit == 0:
+		return 1
+	else:
+		return 0
 
 def fitnessOverTime(fitnessList, inputPath, crossover, mutation, iteration):
 	pathArr = inputPath.split('/')
@@ -371,7 +455,7 @@ def fitnessOverTime(fitnessList, inputPath, crossover, mutation, iteration):
 	f.savefig(outPath)
 	plt.close(f)
 
-def writeData(inPath, crossover, mutation, avgGeneticDist, avgGeneticTime, avgWocDist, avgWocTime):
+def writeData(inPath, crossover, mutation, avgGeneticDist, avgGeneticTime, avgWocDist, avgWocTime, numNodes, numEdges):
 	pathArr = inPath.split('/')
 	filename = pathArr[-1]
 	category = pathArr[-2]
@@ -380,7 +464,7 @@ def writeData(inPath, crossover, mutation, avgGeneticDist, avgGeneticTime, avgWo
 	outPath = './results/'+ runCombo + '/' + category + '.res'
 
 	optimal = getOptimalDist(category, filename)
-	line  = filename + ' ' + str(optimal) + ' ' + str(avgGeneticDist) + ' ' + str(avgGeneticTime) + ' ' + str(avgWocDist) + ' ' + str(avgWocTime) + '\n'
+	line  = filename + ' ' + str(numNodes) + ' ' + str(numEdges) + ' ' + str(optimal) + ' ' + str(avgGeneticDist) + ' ' + str(avgGeneticTime) + ' ' + str(avgWocDist) + ' ' + str(avgWocTime) + '\n'
 	f = open(outPath, 'a+')
 	f.write(line)
 	f.close()
@@ -405,14 +489,41 @@ def getAvg(numList):
 
 def main():
 
-	inputPath = sys.argv[1]
-	minGenerations = int(sys.argv[2])
-	crossoverChoice = sys.argv[3]
-	mutationChoice = sys.argv[4]
+	inputPath = ''
+	minGenerations = 20
+	numtrials = 1
+	crossoverChoice = sys.argv[1]
+	mutationChoice = sys.argv[2]
+	rudyFiles = os.listdir('./data/rudy')
+	isingFiles = os.listdir('./data/ising')
+	rudyFiles.sort() # sorts normally by alphabetical order
+	rudyFiles.sort(key=len) # sorts by descending length
+	isingFiles.sort() # sorts normally by alphabetical order
+	isingFiles.sort(key=len) # sorts by descending length
 
+	for dataFile in rudyFiles:
+		print '\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+		print 'input file: ' + dataFile
+		beginTime = time.time()
+		runTests('./data/rudy/'+ dataFile, minGenerations, crossoverChoice, mutationChoice, numtrials)
+		endTime = time.time()
+		print 'total runtime for all trials - ' + str(endTime - beginTime)
+		print str(float(rudyFiles.index(dataFile)+1)/len(rudyFiles)) + ' percent complete for rudyFiles'
+		print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+
+	for dataFile in isingFiles:
+		print '\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+		print 'input file: ' + dataFile
+		beginTime = time.time()
+		runTests('./data/ising/'+ dataFile, minGenerations, crossoverChoice, mutationChoice, numtrials)
+		endTime = time.time()
+		print 'total runtime for all trials - ' + str(endTime - beginTime)
+		print str(float(isingFiles.index(dataFile)+1)/len(isingFiles)) + ' percent complete for isingFiles'
+		print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+
+def runTests(inputPath, minGenerations, crossoverChoice, mutationChoice, numtrials):
 	random.seed()
 
-	print inputPath
 	cityGraph = initializeGraph(inputPath)
 	# illustrateFullGraph(cityGraph)
 
@@ -431,10 +542,10 @@ def main():
 	geneticTimeTracker = []
 	wocTimeTracker = []
 
-	for i in range(2):
+	for i in range(numtrials):
+		print '------------'
 		fitnessList = []
-		print 'input file: ' + inputPath
-		print 'trial: ' + str(i)
+		print 'trial: ' + str(i + 1)
 		pop = Population(cityGraph, 100, crossover, mutation, .1)
 		start = time.time()
 		fitnessList = runGeneticAlgorithm(cityGraph, pop, minGenerations)
@@ -453,18 +564,18 @@ def main():
 		wocTimeTracker.append(wocRuntime)
 
 		fitnessOverTime(fitnessList, inputPath, crossoverChoice, mutationChoice, i+1)
+		print '------------'
 
+	numNodes = cityGraph.number_of_nodes()
+	numEdges = cityGraph.number_of_edges()
 	geneticPerformanceAverage = getAvg(geneticPerfTracker)
 	wocPerformanceAverage = getAvg(wocPerfTracker)
 	geneticRuntimeAverage = getAvg(geneticTimeTracker)
 	wocRuntimeAverage = getAvg(wocTimeTracker)
-	print 'geneticPerformanceAverage: ' + str(geneticPerformanceAverage)
-	print 'wocPerformanceAverage: ' + str(wocPerformanceAverage)
-	print 'geneticRuntimeAverage: ' + str(geneticRuntimeAverage)
-	print 'wocRuntimeAverage: ' + str(wocRuntimeAverage)
-	print '------------\n'
+	print 'geneticPerformanceAverage: ' + str(geneticPerformanceAverage), '\twocPerformanceAverage: ' + str(wocPerformanceAverage)
+	print 'geneticRuntimeAverage: ' + str(geneticRuntimeAverage), '\twocRuntimeAverage: ' + str(wocRuntimeAverage)
 
-	writeData(inputPath, crossoverChoice, mutationChoice, geneticPerformanceAverage, geneticRuntimeAverage, wocPerformanceAverage, wocRuntimeAverage)
+	writeData(inputPath, crossoverChoice, mutationChoice, geneticPerformanceAverage, geneticRuntimeAverage, wocPerformanceAverage, wocRuntimeAverage, numNodes, numEdges)
 
 if __name__ == "__main__":
     main()
