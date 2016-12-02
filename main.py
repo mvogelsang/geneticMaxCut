@@ -499,15 +499,15 @@ def main():
 	isingFiles.sort() # sorts normally by alphabetical order
 	isingFiles.sort(key=len) # sorts by descending length
 
-	for dataFile in rudyFiles:
-		print '\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-		print 'input file: ' + dataFile
-		beginTime = time.time()
-		runTests('./data/rudy/'+ dataFile, minGenerations, crossoverChoice, mutationChoice, numtrials)
-		endTime = time.time()
-		print 'total runtime for all trials - ' + str(endTime - beginTime)
-		print str(float(rudyFiles.index(dataFile)+1)/len(rudyFiles)) + ' percent complete for rudyFiles'
-		print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+	# for dataFile in rudyFiles:
+	# 	print '\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+	# 	print 'input file: ' + dataFile
+	# 	beginTime = time.time()
+	# 	runTests('./data/rudy/'+ dataFile, minGenerations, crossoverChoice, mutationChoice, numtrials)
+	# 	endTime = time.time()
+	# 	print 'total runtime for all trials - ' + str(endTime - beginTime)
+	# 	print str(float(rudyFiles.index(dataFile)+1)/len(rudyFiles)) + ' percent complete for rudyFiles'
+	# 	print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 
 	for dataFile in isingFiles:
 		print '\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
